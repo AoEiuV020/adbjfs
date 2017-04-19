@@ -7,9 +7,9 @@ repositories {
 
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'com.github.AoEiuV020:fuse-jna:1.1.1'
+    compile 'com.github.AoEiuV020:fuse-jna:1.2'
     testCompile 'junit:junit:4.12'
-    testCompile 'org.slf4j:slf4j-simple:1.7.25'
+    compile 'org.slf4j:slf4j-simple:1.7.25'
 }
 
 mainClassName = 'aoeiuv020.Main'

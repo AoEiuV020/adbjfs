@@ -14,11 +14,11 @@ public class AdbUtils {
     private static final Logger logger = LoggerFactory.getLogger(AdbUtils.class);
     private static final ByteArrayInputStream emptyInputStream = new ByteArrayInputStream(new byte[0]);
 
-    public static ExecuteResult execute(String cmd) throws IOException, InterruptedException {
+    public static ExecuteResult execute(String cmd) throws IOException {
         return execute(emptyInputStream, cmd.split(" "));
     }
 
-    static ExecuteResult execute(InputStream input, String[] cmdArray) throws IOException, InterruptedException {
+    static ExecuteResult execute(InputStream input, String[] cmdArray) throws IOException {
         logger.debug("execute {}", (Object) cmdArray);
         ExecuteResult result = new ExecuteResult();
         result.out = new ByteArrayOutputStream();
@@ -34,14 +34,17 @@ public class AdbUtils {
         result.process.getErrorStream().close();
         logger.trace("process isAlive {}", result.process.isAlive());
         //TODO: 设置等待超时，或者在上面读时设置超时，
-        result.process.waitFor();
+        try {
+            result.process.waitFor();
+        } catch (InterruptedException ignore) {
+        }
         logger.debug("process exitValue {}", result.process.exitValue());
         if (result.process.exitValue() != 0) {
             if (result.out.size() < 1000)
                 logger.error("execute error out: {}", result.out.toString());
             else
                 logger.error("execute error out len: {}", result.out.size());
-            if (result.err.size() < 1000)
+            if (result.err.size() < 2000)
                 logger.error("execute error err: {}", result.err.toString());
             else
                 logger.error("execute error err len: {}", result.err.size());
@@ -49,11 +52,11 @@ public class AdbUtils {
         return result;
     }
 
-    public static ExecuteResult adbShell(String cmd) throws IOException, InterruptedException {
+    public static ExecuteResult adbShell(String cmd) throws IOException {
         return adbShell(emptyInputStream, cmd.split(" "));
     }
 
-    public static ExecuteResult adbShell(InputStream input, String... cmdArray) throws IOException, InterruptedException {
+    public static ExecuteResult adbShell(InputStream input, String... cmdArray) throws IOException {
         logger.debug("adbShell {}", (Object) cmdArray);
         //TODO: 判断adb状态，
         //TODO: adb shell cmd args... 后面的参数要转义，暂时不使用参数，
@@ -64,7 +67,7 @@ public class AdbUtils {
         return execute(input, actuallyCmdArray);
     }
 
-    public static ExecuteResult adbPush(File from, String to) throws IOException, InterruptedException {
+    public static ExecuteResult adbPush(File from, String to) throws IOException {
         logger.debug("adbPush <{},{}>", from, to);
         //TODO: from有特殊情况字符的情况，比如引号"，待验证，
         //TODO: 判断文件to是否存在，可以省个push,
@@ -76,7 +79,7 @@ public class AdbUtils {
         return execute(emptyInputStream, cmdArray);
     }
 
-    public static ExecuteResult adbWrite(InputStream input, String to) throws IOException, InterruptedException {
+    public static ExecuteResult adbWrite(InputStream input, String to) throws IOException {
         logger.debug("adbWrite {}", to);
         String[] cmds = new String[3];
         cmds[0] = "cat";
@@ -85,11 +88,11 @@ public class AdbUtils {
         return adbShell(input, cmds);
     }
 
-    public static ExecuteResult adbDalvikvm(String classpath, String mainClassName, String... args) throws IOException, InterruptedException {
+    public static ExecuteResult adbDalvikvm(String classpath, String mainClassName, String... args) throws IOException {
         return adbDalvikvm(classpath, mainClassName, emptyInputStream, args);
     }
 
-    public static ExecuteResult adbDalvikvm(String classpath, String mainClassName, InputStream input, String... args) throws IOException, InterruptedException {
+    public static ExecuteResult adbDalvikvm(String classpath, String mainClassName, InputStream input, String... args) throws IOException {
         logger.debug("adbDalvikvm {}", mainClassName);
         String[] cmdArray = new String[3 + args.length];
         cmdArray[0] = "CLASSPATH=" + classpath;
@@ -100,12 +103,13 @@ public class AdbUtils {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    static long copy(InputStream input, OutputStream output) throws IOException, InterruptedException {
+    static long copy(InputStream input, OutputStream output) throws IOException {
         long count = 0;
         int len;
         byte[] buf = new byte[4096];
         // adb shell 命令的输出流的available始终为0,
         while ((len = input.read(buf)) > 0) {
+            logger.trace("copy #{}", len);
             output.write(buf, 0, len);
             count += len;
         }
