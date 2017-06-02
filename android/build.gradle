@@ -1,0 +1,43 @@
+apply plugin: 'java'
+
+version = '0.1'
+repositories {
+    jcenter()
+}
+dependencies {
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+def sSdkDir = properties.getProperty('sdk.dir')
+def iCompileSdkVersion = 25
+def sBuildToolsVersion = '25.0.2'
+def fBuildTools = new File(sSdkDir, 'build-tools')
+fBuildTools = new File(fBuildTools, sBuildToolsVersion)
+def fDx = new File(fBuildTools, 'dx')
+def fPlatforms = new File(sSdkDir, 'platforms')
+fPlatforms = new File(fPlatforms, "android-$iCompileSdkVersion")
+def fAndroidJar = new File(fPlatforms, 'android.jar')
+def fOutputDex = new File(project.buildDir, "classes.dex")
+compileJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+    options.bootClasspath = fAndroidJar
+}
+task dx(type: Exec, dependsOn: 'jar') {
+    inputs.file(jar.archivePath)
+    inputs.files(configurations.compile.getFiles())
+    outputs.file(fOutputDex)
+    executable(fDx)
+    args('--dex')
+    args("--output=${fOutputDex}")
+    args(jar.archivePath)
+    args(configurations.compile.getFiles())
+}
+task rejar(type: Jar, dependsOn: 'dx') {
+    from sourceSets.main.resources
+    from(project.buildDir) {
+        include "${fOutputDex.name}"
+    }
+    baseName = "adbjfs"
+}

@@ -1,0 +1,21 @@
+apply plugin: 'java'
+apply plugin: 'application'
+repositories {
+    jcenter()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'com.github.AoEiuV020:fuse-jna:1.2'
+    testCompile 'junit:junit:4.12'
+    compile 'org.slf4j:slf4j-simple:1.7.25'
+}
+
+mainClassName = 'aoeiuv020.Main'
+task copyAsResource(type:Copy, dependsOn: ':android:rejar') {
+    from tasks.getByPath(':android:rejar').archivePath
+    into 'src/main/resources'
+    rename{'adbjfs-android.jar'}
+}
+tasks['processResources'].dependsOn('copyAsResource')
